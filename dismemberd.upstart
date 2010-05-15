@@ -1,0 +1,12 @@
+stop on runlevel 0
+stop on runlevel 1
+stop on runlevel 6
+
+start on stopped rc2
+start on stopped rc3
+start on stopped rc4
+start on stopped rc5
+
+exec /usr/local/bin/memberd -d /etc/dsh/group -g all
+respawn
+
