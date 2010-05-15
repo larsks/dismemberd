@@ -116,7 +116,7 @@ static cpg_callbacks_t callbacks = {
 };
 
 static void usage (FILE *out) {
-	fprintf(out, "memberd: usage: memberd [ -n ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
+	fprintf(out, "dismemberd: usage: dismemberd [ -n ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
 }
 
 static void join_cpg_group (gpointer p_grp, gpointer data) {
@@ -240,7 +240,7 @@ static int test_list_dir () {
 int main (int argc, char *argv[]) {
 	int c;
 
-	g_message("memberd v%s by Lars Kellogg-Stedman", VERSION);
+	g_message("dismemberd v%s by Lars Kellogg-Stedman", VERSION);
 	g_log_set_fatal_mask(NULL, G_LOG_LEVEL_CRITICAL|G_LOG_LEVEL_ERROR);
 
 	while ((c = getopt(argc, argv, OPTSTRING)) != EOF) {
