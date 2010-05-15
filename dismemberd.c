@@ -207,7 +207,7 @@ static void add_cpg_group (char *name) {
 	grp->name = name;
 	result = cpg_initialize (&(grp->handle), no_callbacks ? NULL : &callbacks);
 	if (result != CS_OK) {
-		g_critical("could not initialize Cluster Process Group API instance: error %d", result);
+		g_critical("group %s: could not initialize CPG API: error %d", name, result);
 		exit(1);
 	} else {
 		g_message("initialized group %s.", name);
