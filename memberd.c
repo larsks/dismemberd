@@ -116,7 +116,7 @@ static cpg_callbacks_t callbacks = {
 };
 
 static void usage (FILE *out) {
-	fprintf(out, "memberd: usage: memberd [ -nf ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
+	fprintf(out, "memberd: usage: memberd [ -n ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
 }
 
 static void join_cpg_group (gpointer p_grp, gpointer data) {
@@ -179,7 +179,6 @@ static void loop () {
 	} while (!quit);
 }
 
-//static void sigint_handler (int signum) __attribute__((__noreturn__));
 static void sigint_handler (int signum) {
 	quit = 1;
 }
@@ -217,6 +216,27 @@ static void add_cpg_group (char *name) {
 	groups = g_list_append(groups, grp);
 }
 
+static int test_list_dir () {
+	int res = 0;
+	int fnlen;
+	char *fn;
+	FILE *fd;
+
+	fnlen = (strlen(group_list_dir) + strlen(".test") + 2);
+	fn = (char *)malloc(fnlen);
+	snprintf(fn, fnlen, "%s/%s", group_list_dir, ".test");
+
+	fd = fopen(fn, "w");
+	if (fd == NULL)
+		res = 1;
+	else if (fclose(fd) != 0)
+		res = 1;
+	else if (unlink(fn) != 0)
+		res = 1;
+
+	return res;
+}
+
 int main (int argc, char *argv[]) {
 	int c;
 
@@ -245,6 +265,11 @@ int main (int argc, char *argv[]) {
 				usage(stderr);
 				exit(2);
 		}
+	}
+
+	if (test_list_dir() != 0) {
+		g_critical("cannot create group lists in %s.", group_list_dir);
+		exit(1);
 	}
 
 	join_cpg_groups();
