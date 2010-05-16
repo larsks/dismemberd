@@ -1,3 +1,21 @@
+/*
+ *  This file is part of Dismemberd.
+ *
+ *  Dismemberd is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Dismemberd is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Dismemberd.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -13,37 +31,9 @@
 #include <signal.h>
 #include <fcntl.h>
 
-#include <glib.h>
-
-#include <corosync/corotypes.h>
-#include <corosync/cpg.h>
-#include <corosync/swab.h>
-
-#include "version.h"
-
-#define OPT_GROUP	'g'
-#define OPT_GROUPDIR	'd'
-#define OPT_NOCB	'n'
-#define OPT_FOREGROUND	'f'
-#define OPT_LOGFILE	'l'
-#define OPTSTRING	":g:d:nfl:"
+#include "dismemberd.h"
 
 static int quit = 0;
-static int foreground = 0;
-static int show_ip = 1;
-static int no_callbacks = 0;
-static char *group_list_dir = ".";
-static char *logfile = NULL;
-
-#include <sys/queue.h>
-
-GList	*groups = NULL;
-
-struct group {
-	char		*name;
-	cpg_handle_t	handle;
-	int		select_fd;
-};
 
 static void write_entry(gpointer k, gpointer v, gpointer data) {
 	struct in_addr saddr;
@@ -111,7 +101,7 @@ static void confchg_cb (
 	*/
 }
 
-static cpg_callbacks_t callbacks = {
+cpg_callbacks_t callbacks = {
 	.cpg_confchg_fn =            confchg_cb,
 };
 
@@ -119,56 +109,27 @@ static void usage (FILE *out) {
 	fprintf(out, "dismemberd: usage: dismemberd [ -n ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
 }
 
-static void join_cpg_group (gpointer p_grp, gpointer data) {
-	int result;
-	struct cpg_name group_name;
-	struct group *grp = (struct group *)p_grp;
-
-	g_message("joining group: %s", grp->name);
-
-	strcpy(group_name.value, grp->name);
-	group_name.length = strlen(grp->name);
-	result = cpg_join(grp->handle, &group_name);
-
-	if (result != CS_OK) {
-		g_critical ("could not join process group: error %d", result);
-		exit (1);
-	}
-}
-
-static void join_cpg_groups() {
-	g_list_foreach(groups, join_cpg_group, NULL);
-}
-
-static void dispatch_group(gpointer n, gpointer data) {
-	struct group *grp = (struct group *)n;
-	fd_set *read_fds = (fd_set *)data;
-
-	if (FD_ISSET (grp->select_fd, read_fds))
-		if (cpg_dispatch (grp->handle, CS_DISPATCH_ALL) != CS_OK)
-			g_critical("dispatch failed for %s", grp->name);
+static void sigint_handler (int signum) {
+	quit = 1;
 }
 
 static void loop () {
-	int max_fd;
 	int result;
 	GList *n;
 	struct group *grp;
-	fd_set read_fds;
+	struct max_fd_set read_fds;
 
-	FD_ZERO (&read_fds);
+	read_fds.max_fd = 0;
+	FD_ZERO (&(read_fds.fds));
+
+	signal(SIGINT, sigint_handler);
 
 	do {
-		for (n = g_list_first(groups); n != NULL; n = g_list_next(groups)) {
-			grp = (struct group *)n->data;
-			FD_SET (grp->select_fd, &read_fds);
-			if (grp->select_fd > max_fd)
-				max_fd = grp->select_fd;
-		}
+		g_list_foreach(groups, set_group_fd, &read_fds);
 
-		result = select (max_fd + 1, &read_fds, 0, 0, 0);
+		result = select (read_fds.max_fd + 1, &(read_fds.fds), 0, 0, 0);
 		if (result == -1) {
-			if (errno == EINTR) return;
+			if (errno == EINTR) break;
 
 			g_critical("select failed: %s", strerror(errno));
 			exit(1);
@@ -177,43 +138,6 @@ static void loop () {
 		g_list_foreach(groups, dispatch_group, &read_fds);
 
 	} while (!quit);
-}
-
-static void sigint_handler (int signum) {
-	quit = 1;
-}
-
-static void finalize_cpg_groups () {
-	int result;
-	GList *n;
-	struct group *grp;
-
-	g_message("finalizing groups.");
-
-	for (n=g_list_first(groups); n != NULL; n = g_list_next(groups)) {
-		grp = (struct group *)n->data;
-
-		result = cpg_finalize (grp->handle);
-		if (result != 1)
-			g_warning("finalize %s: result is %d, should be 1", grp->name, result);
-	}
-}
-
-static void add_cpg_group (char *name) {
-	struct group *grp;
-	int result;
-
-	grp = (struct group *)malloc(sizeof(struct group));
-	grp->name = name;
-	result = cpg_initialize (&(grp->handle), no_callbacks ? NULL : &callbacks);
-	if (result != CS_OK) {
-		g_critical("group %s: could not initialize CPG API: error %d", name, result);
-		exit(1);
-	} else {
-		g_message("initialized group %s.", name);
-	}
-	cpg_fd_get(grp->handle, &(grp->select_fd));
-	groups = g_list_append(groups, grp);
 }
 
 static int test_list_dir () {
@@ -240,16 +164,13 @@ static int test_list_dir () {
 int main (int argc, char *argv[]) {
 	int c;
 
-	g_message("dismemberd v%s by Lars Kellogg-Stedman", VERSION);
-	g_log_set_fatal_mask(NULL, G_LOG_LEVEL_CRITICAL|G_LOG_LEVEL_ERROR);
-
 	while ((c = getopt(argc, argv, OPTSTRING)) != EOF) {
 		switch (c) {
+			case OPT_LOG_SYSLOG:
+				log_syslog = 1;
+				break;
 			case OPT_LOGFILE:
 				logfile = strdup(optarg);
-				break;
-			case OPT_FOREGROUND:
-				foreground = 1;
 				break;
 			case OPT_NOCB:
 				no_callbacks = 1;
@@ -267,13 +188,16 @@ int main (int argc, char *argv[]) {
 		}
 	}
 
+	init_logging(log_syslog);
+	g_message("dismemberd v%s by Lars Kellogg-Stedman", VERSION);
+
 	if (test_list_dir() != 0) {
 		g_critical("cannot create group lists in %s.", group_list_dir);
 		exit(1);
 	}
 
+	init_cpg_groups();
 	join_cpg_groups();
-	signal(SIGINT, sigint_handler);
 	loop();
 	finalize_cpg_groups();
 }
