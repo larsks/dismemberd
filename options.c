@@ -18,12 +18,53 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "dismemberd.h"
 
-int show_ip = 1;
-int no_callbacks = 0;
-char *group_list_dir = ".";
-char *logfile = NULL;
-int log_syslog = 0;
+int	show_ip		=	1;
+int	no_callbacks	=	0;
+char	*group_list_dir	=	".";
+char	*logfile	=	NULL;
+int	log_syslog	=	0;
+int	execute_script	=	0;
+char	*execute_script_path
+			=	NULL;
+
+static void usage (FILE *out) {
+	fprintf(out, "dismemberd: usage: dismemberd [ -n ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
+}
+
+void process_options(int argc, char *argv[]) {
+	int c;
+
+	while ((c = getopt(argc, argv, OPTSTRING)) != EOF) {
+		switch (c) {
+			case OPT_LOG_SYSLOG:
+				log_syslog = 1;
+				break;
+			case OPT_LOGFILE:
+				logfile = strdup(optarg);
+				break;
+			case OPT_NOCB:
+				no_callbacks = 1;
+				break;
+			case OPT_GROUPDIR:
+				group_list_dir = strdup(optarg);
+				break;
+			case OPT_GROUP:
+				add_cpg_group(strdup(optarg));
+				break;
+			case OPT_EXECUTE_SCRIPT:
+				execute_script = 1;
+				execute_script_path = strdup(optarg);
+				break;
+
+			case '?':
+				usage(stderr);
+				exit(2);
+		}
+	}
+}
 

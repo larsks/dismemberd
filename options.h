@@ -17,12 +17,13 @@
  * 
  */
 
-#define OPT_GROUP	'g'
-#define OPT_GROUPDIR	'd'
-#define OPT_NOCB	'n'
-#define OPT_LOGFILE	'l'
-#define OPT_LOG_SYSLOG	's'
-#define OPTSTRING	":g:d:nsl:"
+#define OPT_GROUP		'g'
+#define OPT_GROUPDIR		'd'
+#define OPT_NOCB		'n'
+#define OPT_LOGFILE		'l'
+#define OPT_LOG_SYSLOG		's'
+#define OPT_EXECUTE_SCRIPT	'x'
+#define OPTSTRING		":g:d:nsl:x:"
 
 /* options.c */
 extern int show_ip;
@@ -30,4 +31,7 @@ extern int no_callbacks;
 extern char *group_list_dir;
 extern char *logfile;
 extern int log_syslog;
+extern int execute_script;
+extern char *execute_script_path;
+extern void process_options(int argc, char *argv[]);
 

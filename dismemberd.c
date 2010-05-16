@@ -105,10 +105,6 @@ cpg_callbacks_t callbacks = {
 	.cpg_confchg_fn =            confchg_cb,
 };
 
-static void usage (FILE *out) {
-	fprintf(out, "dismemberd: usage: dismemberd [ -n ] [ -d <dir> ] [ -g <group> [ -g <group> ... ]\n");
-}
-
 static void sigint_handler (int signum) {
 	quit = 1;
 }
@@ -140,59 +136,20 @@ static void loop () {
 	} while (!quit);
 }
 
-static int test_list_dir () {
-	int res = 0;
-	int fnlen;
-	char *fn;
-	FILE *fd;
-
-	fnlen = (strlen(group_list_dir) + strlen(".test") + 2);
-	fn = (char *)malloc(fnlen);
-	snprintf(fn, fnlen, "%s/%s", group_list_dir, ".test");
-
-	fd = fopen(fn, "w");
-	if (fd == NULL)
-		res = 1;
-	else if (fclose(fd) != 0)
-		res = 1;
-	else if (unlink(fn) != 0)
-		res = 1;
-
-	return res;
-}
-
 int main (int argc, char *argv[]) {
-	int c;
-
-	while ((c = getopt(argc, argv, OPTSTRING)) != EOF) {
-		switch (c) {
-			case OPT_LOG_SYSLOG:
-				log_syslog = 1;
-				break;
-			case OPT_LOGFILE:
-				logfile = strdup(optarg);
-				break;
-			case OPT_NOCB:
-				no_callbacks = 1;
-				break;
-			case OPT_GROUPDIR:
-				group_list_dir = strdup(optarg);
-				break;
-			case OPT_GROUP:
-				add_cpg_group(strdup(optarg));
-				break;
-
-			case '?':
-				usage(stderr);
-				exit(2);
-		}
-	}
+	process_options(argc, argv);
 
 	init_logging(log_syslog);
 	g_message("dismemberd v%s by Lars Kellogg-Stedman", VERSION);
 
-	if (test_list_dir() != 0) {
+	if (path_is_writeable_dir(group_list_dir) != 0) {
 		g_critical("cannot create group lists in %s.", group_list_dir);
+		exit(1);
+	}
+
+	if (path_is_executable(execute_script_path) != 0) {
+		g_critical("cannot execute script (%s).",
+				execute_script_path);
 		exit(1);
 	}
 
