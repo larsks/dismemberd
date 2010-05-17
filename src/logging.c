@@ -21,7 +21,7 @@
 
 #include "dismemberd.h"
 
-void log_to_stderr (const gchar *log_domain,
+static void log_to_stderr (const gchar *log_domain,
 		GLogLevelFlags log_level,
 		const gchar *message,
 		gpointer user_data) {
@@ -50,7 +50,7 @@ void log_to_stderr (const gchar *log_domain,
 			message);
 }
 
-void log_to_syslog (const gchar *log_domain,
+static void log_to_syslog (const gchar *log_domain,
 		GLogLevelFlags log_level,
 		const gchar *message,
 		gpointer user_data) {
