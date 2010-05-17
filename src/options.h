@@ -25,13 +25,26 @@
 #define OPT_EXECUTE_SCRIPT	'x'
 #define OPTSTRING		":g:d:nsl:x:"
 
-/* options.c */
-extern int show_ip;
+//! If true, do not register group change callback function.
 extern int no_callbacks;
+
+//! Where to store group files.
 extern char *group_list_dir;
+
+//! Unused.
 extern char *logfile;
+
+//! If true, log to syslog.
 extern int log_syslog;
+
+//! If true, run script on group configuration change.
 extern int execute_script;
+
+//! Script to run if execute_script is true.
 extern char *execute_script_path;
+
+/**
+ * Process command line options.
+ */
 extern void process_options(int argc, char *argv[]);
 
