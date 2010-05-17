@@ -34,6 +34,9 @@ CFLAGS = -g
 %.func.h: %.c
 	cproto $(CPPFLAGS) -ev -o $@ $<
 
+%.o: %.c
+	$(CC) $(CPPFLAGS) -MD -c -o $@ $<
+
 all: dismemberd
 
 dismemberd: $(OBJS)
@@ -50,5 +53,6 @@ clean:
 	rm -f $(OBJS)
 	rm -f dismemberd
 
-dismemberd.o: dismemberd.c dismemberd.h groups.h logging.h options.h version.h
+# automatically generated dependencies
+-include $(OBJS:%.o=%.d)
 
