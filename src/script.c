@@ -9,6 +9,13 @@
 
 #include "dismemberd.h"
 
+/**
+ * Adds DMD_GROUP_x variable to the environment for one group.  This 
+ * function is called once for each group by setup_script_env().
+ *
+ * \param n Pointer to a struct group.
+ * \param data Pointer to an integer.  This is the group counter.
+ */
 static void set_group_env(gpointer n, gpointer data) {
 	struct group *grp = (struct group *)n;
 	int *i = (int *)data;
@@ -26,6 +33,13 @@ static void set_group_env(gpointer n, gpointer data) {
 	free(varname);
 }
 
+/**
+ * Sets up environment variables before calling script.  This function
+ * populates the environment with DMD_GROUP_LIST_DIR (path to group
+ * list directory) and DMD_NUM_GROUPS (number of groups of which we are 
+ * a member), and then calls set_group_env() once for each group to
+ * create the necessary DMD_GROUP_x variables.
+ */
 static void setup_script_env() {
 	int i = 0;
 	int len;
