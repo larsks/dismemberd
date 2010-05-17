@@ -91,14 +91,9 @@ static void confchg_cb (
 
 	g_message("config change: total: %d, joined: %d, left: %d", 
 			member_list_entries, joined_list_entries, left_list_entries);
-	write_entries(groupName, member_list, member_list_entries);
 
-	/*
-	if (left_list_entries && left_list[0].pid == getpid()) {
-		printf("We have left the building\n");
-		quit = 1;
-	}
-	*/
+	write_entries(groupName, member_list, member_list_entries);
+	execute_confchange_script();
 }
 
 cpg_callbacks_t callbacks = {

@@ -19,10 +19,10 @@ exec_prefix = $(prefix)
 bindir = $(exec_prefix)/bin
 sysconfdir = /etc
 
-OBJS = dismemberd.o logging.o groups.o options.o path.o
+OBJS = dismemberd.o logging.o groups.o options.o path.o script.o
 
 CPPFLAGS = -I. $(shell pkg-config --cflags glib-2.0)
-LIBS = -lcpg $(shell pkg-config --libs glib-2.0)
+LIBS = -lcpg $(shell pkg-config --libs glib-2.0) -lm
 CFLAGS = -g
 
 %.func.h: %.c
