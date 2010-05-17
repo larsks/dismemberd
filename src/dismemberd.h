@@ -28,6 +28,7 @@
 #include "groups.h"
 #include "options.h"
 #include "path.h"
+#include "script.h"
 
 struct max_fd_set {
 	fd_set	fds;
