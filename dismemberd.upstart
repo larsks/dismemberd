@@ -7,6 +7,6 @@ start on stopped rc3
 start on stopped rc4
 start on stopped rc5
 
-exec /usr/local/bin/memberd -d /etc/dsh/group -g all
+exec /usr/bin/dismemberd -d /etc/dsh/group -g all
 respawn
 
