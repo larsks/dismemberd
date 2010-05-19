@@ -23,7 +23,6 @@
 
 #include "dismemberd.h"
 
-int	show_ip		=	1;
 int	no_callbacks	=	0;
 char	*group_list_dir	=	".";
 char	*logfile	=	NULL;

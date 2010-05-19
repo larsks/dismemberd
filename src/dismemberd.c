@@ -142,7 +142,7 @@ int main (int argc, char *argv[]) {
 		exit(1);
 	}
 
-	if (path_is_executable(execute_script_path) != 0) {
+	if (execute_script && (path_is_executable(execute_script_path) != 0)) {
 		g_critical("cannot execute script (%s).",
 				execute_script_path);
 		exit(1);
